@@ -1,109 +1,201 @@
 const express = require('express');
 const app = express();
-const PORT = 3000; // A API vai rodar na porta 3000
+const PORT = 4000;
 
 app.use(express.json());
 
-// Nosso Banco de Dados simulado dentro da API do CRM
+// Middleware para simular um pequeno delay de rede (deixa a apresentação mais realista)
+app.use((req, res, next) => {
+  setTimeout(next, 600);
+});
+
+// Banco de Dados Mockado (Estrutura idêntica ao CV CRM)
 let bancoCRM = [
   {
-    id: 101,
+    id: 80,
     nome: 'João Silva',
     telefone: '45999991111',
-    empreendimento: 'Carmel',
-    responsavel: 'Alex Wilber',
-    interacoes: [],
+    email: 'joao.silva101@teste.com',
+    idimobiliaria: 2,
+    imobiliaria_nome: 'Pratti',
+    idcorretor: 464,
+    corretor_nome: 'Leonardo',
+    idsituacao: 3,
+    interacoes: [
+      { data: new Date().toISOString(), texto: 'Primeiro contato via WhatsApp', autor: 'Leonardo' },
+    ],
   },
   {
-    id: 102,
-    nome: 'João Silva',
+    id: 81,
+    nome: 'João Silva', // Nome duplicado propositalmente para demonstrar a Regra 5 (Ambiguidade)
     telefone: '45988882222',
-    empreendimento: 'Villa Bella',
-    responsavel: 'Alex Wilber',
+    email: 'joao.silva102@teste.com',
+    idimobiliaria: 2,
+    imobiliaria_nome: 'Pratti',
+    idcorretor: 120,
+    corretor_nome: 'Amanda',
+    idsituacao: 1,
     interacoes: [],
   },
   {
-    id: 103,
+    id: 82,
     nome: 'Carlos Souza',
     telefone: '45977773333',
-    empreendimento: 'Carmel',
-    responsavel: 'Mariana Costa',
+    email: 'carlos@souza.com',
+    idimobiliaria: 2,
+    imobiliaria_nome: 'Pratti',
+    idcorretor: 464,
+    corretor_nome: 'Leonardo',
+    idsituacao: 3,
     interacoes: [],
   },
 ];
 
-// [READ] - Rota para listar todos os leads no CRM
-app.get('/api/v1/leads', (req, res) => {
-  console.log('➡️ [CRM API] GET: Listando todos os leads');
-  res.json({ sucesso: true, dados: bancoCRM });
+// ==========================================
+// [R] - READ: Listar Leads
+// ==========================================
+app.get('/api/v1/comercial/leads', (req, res) => {
+  console.log('➡️ [MOCK API] GET: Listando leads na base.');
+
+  // O CV CRM retorna a lista dentro de um objeto { dados: [...] }
+  res.status(200).json({
+    sucesso: true,
+    dados: bancoCRM,
+    quantidade: bancoCRM.length,
+  });
 });
 
-// [CREATE] - Rota para criar um novo lead
-app.post('/api/v1/leads', (req, res) => {
-  const { nome, telefone, origem, gestor_responsavel } = req.body;
+// ==========================================
+// [C] - CREATE: Criar Novo Lead
+// ==========================================
+app.post('/api/v1/comercial/leads', (req, res) => {
+  const { nome, telefone, email, gestor, imobiliaria, corretor } = req.body;
+  console.log(`➡️ [MOCK API] POST: Tentativa de cadastro do lead "${nome}"`);
 
-  console.log('➡️ [CRM API] POST: Recebido payload de criação:', req.body);
+  // Simulação de trava do CRM: Rejeita se faltar dados obrigatórios
+  if (!nome || !telefone || !email) {
+    return res.status(400).json({
+      sucesso: false,
+      codigo: 400,
+      mensagem: 'Parâmetros obrigatórios ausentes. Verifique nome, telefone e email.',
+    });
+  }
+
+  // Simulação de erro 400 por duplicidade (Caso a checagem do bot falhe)
+  const duplicado = bancoCRM.find((l) => l.email === email || l.telefone === telefone);
+  if (duplicado) {
+    return res.status(400).json({
+      sucesso: false,
+      codigo: 400,
+      mensagem: `Lead já cadastrado com este e-mail ou telefone. ID associado: ${duplicado.id}`,
+    });
+  }
+
+  const novoId = bancoCRM.length > 0 ? Math.max(...bancoCRM.map((l) => l.id)) + 1 : 1;
 
   const novoLead = {
-    id: bancoCRM.length + 101,
-    nome: nome || 'Novo Lead',
-    telefone: telefone,
-    empreendimento: 'Não Informado',
-    responsavel: gestor_responsavel || 'Sem Atribuição',
+    id: novoId,
+    nome,
+    telefone,
+    email,
+    idimobiliaria: imobiliaria?.id || 2,
+    imobiliaria_nome: 'Pratti',
+    idcorretor: corretor?.id || 464,
+    corretor_nome: 'Leonardo', // Mockado para o fallback logado
+    idsituacao: 3,
     interacoes: [],
   };
 
   bancoCRM.push(novoLead);
-  res
-    .status(201)
-    .json({ sucesso: true, mensagem: 'Lead cadastrado com sucesso no CRM!', lead: novoLead });
+
+  // Retorno exato da documentação do CV CRM
+  res.status(200).json({
+    sucesso: true,
+    id: novoId.toString(),
+    idimobiliaria: novoLead.idimobiliaria.toString(),
+    imobiliaria_nome: novoLead.imobiliaria_nome,
+    idcorretor: novoLead.idcorretor.toString(),
+    corretor_nome: novoLead.corretor_nome,
+    idsituacao: '3',
+    mensagem: 'Lead cadastrado com sucesso',
+    codigo: 200,
+  });
 });
 
-// [UPDATE] - Rota para atualizar ou registrar interações em um lead específico
-app.patch('/api/v1/leads/:id', (req, res) => {
+// ==========================================
+// [U] - UPDATE: Atualizar ou Adicionar Histórico
+// ==========================================
+app.patch('/api/v1/comercial/leads/:id', (req, res) => {
   const idAlvo = parseInt(req.params.id);
-  console.log(`➡️ [CRM API] PATCH: Atualizando lead ID ${idAlvo}. Dados recebidos:`, req.body);
+  console.log(`➡️ [MOCK API] PATCH: Recebido payload para ID ${idAlvo}`, req.body);
 
-  const lead = bancoCRM.find((l) => l.id === idAlvo);
+  const leadIndex = bancoCRM.findIndex((l) => l.id === idAlvo);
 
-  if (!lead) {
-    return res.status(404).json({ sucesso: false, erro: 'Lead não localizado no banco do CRM.' });
+  if (leadIndex === -1) {
+    return res.status(404).json({
+      sucesso: false,
+      codigo: 404,
+      mensagem: 'Lead não encontrado.',
+    });
   }
 
-  // Se o payload conter uma descrição, salvamos como interação histórica
+  // Se o payload contém "descricao", é uma anotação de histórico
   if (req.body.descricao) {
-    lead.interacoes.push({
+    bancoCRM[leadIndex].interacoes.push({
       data: req.body.data_hora || new Date().toISOString(),
       texto: req.body.descricao,
-      autor: req.body.usuario || 'Sistema',
+      autor: req.body.usuario || 'Sistema Bot',
     });
-    return res.json({ sucesso: true, mensagem: 'Interação gravada no histórico do CRM!', lead });
+
+    return res.status(200).json({
+      sucesso: true,
+      mensagem: 'Histórico inserido com sucesso',
+      codigo: 200,
+    });
   }
 
-  // Atualização de campos comuns se enviados
-  if (req.body.nome) lead.nome = req.body.nome;
-  if (req.body.telefone) lead.telefone = req.body.telefone;
+  // Atualização padrão de campos de cadastro
+  if (req.body.nome) bancoCRM[leadIndex].nome = req.body.nome;
+  if (req.body.telefone) bancoCRM[leadIndex].telefone = req.body.telefone;
+  if (req.body.email) bancoCRM[leadIndex].email = req.body.email;
 
-  res.json({ sucesso: true, mensagem: 'Dados do lead atualizados no CRM!', lead });
+  res.status(200).json({
+    sucesso: true,
+    mensagem: 'Lead atualizado com sucesso',
+    codigo: 200,
+  });
 });
 
-// [DELETE] - Rota para deletar um lead
-app.delete('/api/v1/leads/:id', (req, res) => {
+// ==========================================
+// [D] - DELETE: Remover Lead
+// ==========================================
+app.delete('/api/v1/comercial/leads/:id', (req, res) => {
   const idAlvo = parseInt(req.params.id);
-  console.log(`➡️ [CRM API] DELETE: Removendo lead ID ${idAlvo}`);
+  console.log(`➡️ [MOCK API] DELETE: Solicitação de exclusão ID ${idAlvo}`);
 
-  const index = bancoCRM.findIndex((l) => l.id === idAlvo);
+  const leadIndex = bancoCRM.findIndex((l) => l.id === idAlvo);
 
-  if (index === -1) {
-    return res.status(404).json({ sucesso: false, erro: 'Lead não existe no CRM.' });
+  if (leadIndex === -1) {
+    return res.status(404).json({
+      sucesso: false,
+      codigo: 404,
+      mensagem: 'Lead não encontrado para exclusão.',
+    });
   }
 
-  bancoCRM.splice(index, 1);
-  res.json({ sucesso: true, mensagem: `Lead ${idAlvo} deletado com sucesso do CRM.` });
+  bancoCRM.splice(leadIndex, 1);
+
+  res.status(200).json({
+    sucesso: true,
+    mensagem: 'Lead removido permanentemente.',
+    codigo: 200,
+  });
 });
 
+// Inicialização do Servidor
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`🚀 API FAKE DO CRM RODANDO EM: http://localhost:${PORT}`);
+  console.log(`🚀 [PRATTI] MOCK API DO CV CRM INICIADA`);
+  console.log(`🔗 Endpoint Base: http://localhost:${PORT}/api/v1/comercial/leads`);
   console.log(`======================================================\n`);
 });
