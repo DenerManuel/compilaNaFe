@@ -1,62 +1,62 @@
-# Overview of the Basic AI Chatbot template
+# Visão geral do modelo de Chatbot de IA Básico
 
-This app template is built on top of [Microsoft Teams SDK](https://aka.ms/teams-ai-library-v2). 
-It showcases an agent app that responds to user questions like ChatGPT, which enables your users to talk with the AI agent in Teams.
+Este modelo de aplicativo é desenvolvido sobre o [Microsoft Teams SDK](https://aka.ms/teams-ai-library-v2).
+Ele demonstra um aplicativo de agente que responde a perguntas de usuários como o ChatGPT, o que permite que seus usuários conversem com o agente de IA no Teams.
 
-## Get started with the template
+## Começando com o modelo
 
-> **Prerequisites**
+> **Pré-requisitos**
 >
-> To run the template in your local dev machine, you will need:
+> Para executar o modelo em sua máquina de desenvolvimento local, você precisará de:
 >
-> - [Node.js](https://nodejs.org/), supported versions: 20, 22.
-> - [Microsoft 365 Agents Toolkit Visual Studio Code Extension](https://aka.ms/teams-toolkit) latest version or [Microsoft 365 Agents Toolkit CLI](https://aka.ms/teamsfx-toolkit-cli).
-> - Prepare your own [Azure OpenAI](https://aka.ms/oai/access) resource.
+> - [Node.js](https://nodejs.org/), versões suportadas: 20, 22.
+> - [Extensão do Microsoft 365 Agents Toolkit para Visual Studio Code](https://aka.ms/teams-toolkit) (versão mais recente) ou [Microsoft 365 Agents Toolkit CLI](https://aka.ms/teamsfx-toolkit-cli).
+> - Preparar o seu próprio recurso do [Azure OpenAI](https://aka.ms/oai/access).
 
-> For local debugging using Microsoft 365 Agents Toolkit CLI, you need to do some extra steps described in [Set up your Microsoft 365 Agents Toolkit CLI for local debugging](https://aka.ms/teamsfx-cli-debugging).
+> Para depuração local usando o Microsoft 365 Agents Toolkit CLI, você precisa seguir algumas etapas extras descritas em [Configurar o Microsoft 365 Agents Toolkit CLI para depuração local](https://aka.ms/teamsfx-cli-debugging).
 
-1. First, select the Microsoft 365 Agents Toolkit icon on the left in the VS Code toolbar.
-1. In file *env/.env.playground.user*, fill in your Azure OpenAI key `SECRET_AZURE_OPENAI_API_KEY=<your-key>`, endpoint `AZURE_OPENAI_ENDPOINT=<your-endpoint>`, and deployment name `AZURE_OPENAI_DEPLOYMENT_NAME=<your-deployment>`.
-1. Press F5 to start debugging which launches your app in Microsoft 365 Agents Playground using a web browser. Select `Debug in Microsoft 365 Agents Playground`.
-1. You can send any message to get a response from the agent.
+1. Primeiro, selecione o ícone do Microsoft 365 Agents Toolkit à esquerda na barra de ferramentas do VS Code.
+2. No arquivo *env/.env.playground.user*, preencha a sua chave do Azure OpenAI em `SECRET_AZURE_OPENAI_API_KEY=<sua-chave>`, o endpoint em `AZURE_OPENAI_ENDPOINT=<seu-endpoint>` e o nome da implantação em `AZURE_OPENAI_DEPLOYMENT_NAME=<sua-implantacao>`.
+3. Pressione F5 para iniciar a depuração, o que inicia o seu aplicativo no Microsoft 365 Agents Playground usando um navegador da web. Selecione `Debug in Microsoft 365 Agents Playground`.
+4. Você pode enviar qualquer mensagem para obter uma resposta do agente.
 
-**Congratulations**! You are running an application that can now interact with users in Microsoft 365 Agents Playground:
+**Parabéns**! Você está executando um aplicativo que agora pode interagir com os usuários no Microsoft 365 Agents Playground:
 
-![ai chat agent](https://github.com/user-attachments/assets/984af126-222b-4c98-9578-0744790b103a)
+![agente de chat de ia](https://github.com/user-attachments/assets/984af126-222b-4c98-9578-0744790b103a)
 
-## What's included in the template
+## O que está incluído no modelo
 
-| Folder       | Contents                                            |
+| Pasta | Conteúdo |
 | - | - |
-| `.vscode`    | VSCode files for debugging                          |
-| `appPackage` | Templates for the application manifest        |
-| `env`        | Environment files                                   |
-| `infra`      | Templates for provisioning Azure resources          |
-| `src`        | The source code for the application                 |
+| `.vscode` | Arquivos do VSCode para depuração |
+| `appPackage` | Modelos para o manifesto do aplicativo |
+| `env` | Arquivos de ambiente |
+| `infra` | Modelos para provisionamento de recursos do Azure |
+| `src` | O código-fonte do aplicativo |
 
-The following files can be customized and demonstrate an example implementation to get you started.
+Os arquivos a seguir podem ser personalizados e demonstram um exemplo de implementação para você começar.
 
-| File                                 | Contents                                           |
+| Arquivo | Conteúdo |
 | - | - |
-|`src/index.js`| Application entry point. |
-|`src/config.js`| Defines the environment variables.|
-|`src/app/instructions.txt`| Defines the prompt.|
-|`src/app/app.js`| Handles business logics for the Basic AI Chatbot.|
+|`src/index.js`| Ponto de entrada do aplicativo. |
+|`src/config.js`| Define as variáveis de ambiente. |
+|`src/app/instructions.txt`| Define o prompt. |
+|`src/app/app.js`| Lida com as lógicas de negócios para o Chatbot de IA Básico. |
 
-The following are Microsoft 365 Agents Toolkit specific project files. You can [visit a complete guide on Github](https://github.com/OfficeDev/TeamsFx/wiki/Teams-Toolkit-Visual-Studio-Code-v5-Guide#overview) to understand how Microsoft 365 Agents Toolkit works.
+A seguir estão os arquivos de projeto específicos do Microsoft 365 Agents Toolkit. Você pode [visitar um guia completo no Github](https://github.com/OfficeDev/TeamsFx/wiki/Teams-Toolkit-Visual-Studio-Code-v5-Guide#overview) para entender como o Microsoft 365 Agents Toolkit funciona.
 
-| File                                 | Contents                                           |
+| Arquivo | Conteúdo |
 | - | - |
-|`m365agents.yml`|This is the main Microsoft 365 Agents Toolkit project file. The project file defines two primary things:  Properties and configuration Stage definitions. |
-|`m365agents.local.yml`|This overrides `m365agents.yml` with actions that enable local execution and debugging.|
-|`m365agents.playground.yml`|This overrides `m365agents.yml` with actions that enable local execution and debugging in Microsoft 365 Agents Playground.|
+|`m365agents.yml`| Este é o arquivo de projeto principal do Microsoft 365 Agents Toolkit. O arquivo de projeto define duas coisas principais: Propriedades e configurações e Definições de estágio. |
+|`m365agents.local.yml`| Ele substitui o `m365agents.yml` com ações que habilitam a execução e depuração locais. |
+|`m365agents.playground.yml`| Ele substitui o `m365agents.yml` com ações que habilitam a execução e depuração locais no Microsoft 365 Agents Playground. |
 
-## Extend the template
+## Estenda o modelo
 
-To extend the Basic AI Chatbot template with more AI capabilities, explore [Microsoft Teams SDK documentation](https://aka.ms/m365-agents-toolkit/teams-agent-extend-ai).
+Para estender o modelo de Chatbot de IA Básico com mais recursos de IA, explore a [documentação do Microsoft Teams SDK](https://aka.ms/m365-agents-toolkit/teams-agent-extend-ai).
 
-## Additional information and references
+## Informações adicionais e referências
 
-- [Microsoft 365 Agents Toolkit Documentations](https://docs.microsoft.com/microsoftteams/platform/toolkit/teams-toolkit-fundamentals)
+- [Documentação do Microsoft 365 Agents Toolkit](https://docs.microsoft.com/microsoftteams/platform/toolkit/teams-toolkit-fundamentals)
 - [Microsoft 365 Agents Toolkit CLI](https://aka.ms/teamsfx-toolkit-cli)
-- [Microsoft 365 Agents Toolkit Samples](https://github.com/OfficeDev/TeamsFx-Samples)
+- [Exemplos do Microsoft 365 Agents Toolkit](https://github.com/OfficeDev/TeamsFx-Samples)
