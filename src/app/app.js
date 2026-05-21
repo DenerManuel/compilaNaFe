@@ -350,6 +350,98 @@ function extrairNome(texto) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// EXTRATORES DE CAMPOS OPCIONAIS — enriquecem o lead além do mínimo obrigatório
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const REGEX_CPF = /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g;
+const REGEX_RENDA = /renda\s+(?:aproximada\s+|mensal\s+)?(?:de\s+)?R?\$?\s*(\d[\d.,]+)\s*(mil)?/i;
+
+function extrairOrigem(texto) {
+  try {
+    const match = texto.match(
+      /(?:origem|veio|captado|captei|captou|indicado|indicação|indicacao|canal|vindo)\s*(?::|do|da|de|via|pelo|pela|no|na|através de|atraves de)?\s*([A-ZÀ-Ÿa-zà-ÿ][A-ZÀ-Ÿa-zà-ÿ\s]{2,25})/i
+    );
+    if (match) return match[1].trim();
+    const origens = [
+      ['instagram', 'Instagram'],
+      ['facebook', 'Facebook'],
+      ['whatsapp', 'WhatsApp'],
+      ['site', 'Site'],
+      ['portal', 'Portal'],
+      ['indicação', 'Indicação'],
+      ['indicacao', 'Indicação'],
+      ['google', 'Google Ads'],
+      ['outdoor', 'Outdoor'],
+      ['feirão', 'Feirão'],
+      ['feirao', 'Feirão'],
+      ['plantão', 'Plantão'],
+      ['plantao', 'Plantão'],
+      ['evento', 'Evento'],
+      ['stand', 'Stand'],
+      ['tiktok', 'TikTok'],
+      ['youtube', 'YouTube'],
+      ['email mkt', 'E-mail Marketing'],
+      ['cold call', 'Cold Call'],
+      ['telefone', 'Ligação'],
+      ['visita', 'Visita Espontânea'],
+    ];
+    const t = texto.toLowerCase();
+    for (const [chave, label] of origens) {
+      if (t.includes(chave)) return label;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function extrairRenda(texto) {
+  try {
+    const match = texto.match(REGEX_RENDA);
+    if (!match) return null;
+    let valor = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+    if (match[2] && match[2].toLowerCase() === 'mil') valor *= 1000;
+    return isNaN(valor) ? null : `R$ ${valor.toLocaleString('pt-BR')}`;
+  } catch {
+    return null;
+  }
+}
+
+function extrairCPF(texto) {
+  try {
+    const match = texto.match(REGEX_CPF);
+    return match ? match[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+function extrairDataRetorno(texto) {
+  try {
+    // Captura padrões como "retorno amanhã às 14h", "ligar na sexta às 10h", "follow-up dia 25/06"
+    const match = texto.match(
+      /(?:retorno|ligar|callback|follow[- ]?up|agendar?|chamar|contatar|marcar)\s+(?:para\s+)?(?:o\s+dia\s+|dia\s+)?(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|amanhã|amanha|hoje|segunda(?:-feira)?|terça(?:-feira)?|terca(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|sábado|sabado|domingo)(?:\s+(?:às|as|@)\s*(\d{1,2}[h:]\d{0,2}))?/i
+    );
+    if (!match) return null;
+    const dia = match[1];
+    const hora = match[2] ? match[2].replace('h', ':00').replace(/(\d+):$/, '$1:00') : null;
+    return hora ? `${dia} às ${hora}` : dia;
+  } catch {
+    return null;
+  }
+}
+
+function extrairObservacaoInicial(texto) {
+  try {
+    const match = texto.match(
+      /(?:obs(?:ervação|ervacao)?|nota|observação|observacao|detalhe|interesse|comentário|comentario)[:\s]+(.{5,120})/i
+    );
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // DIRETIVA 4 — SANEAMENTO DE INPUT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const LIMITE_CARACTERES = 600;
@@ -796,9 +888,10 @@ async function verificarPropriedadeLead(leadId) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// MENSAGENS VISUAIS PADRONIZADAS — UX Premium
+// MENSAGENS VISUAIS PADRONIZADAS — UX Premium v3.1
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const MSG = {
+  // ── Existentes (mantidas sem alteração) ───────────────────────────────────
   manutencao: () =>
     `> 🤖 **Assistente em Manutenção**\n> Isolei uma instabilidade no seu comando. Por favor, tente novamente com uma instrução mais objetiva.\n\n*Conformidade: Regra 9 — Responder sempre ao usuário*`,
 
@@ -829,23 +922,172 @@ const MSG = {
     `> ❌ **Campos Obrigatórios Ausentes — Regra 1**\n\n` +
     `Para concluir o cadastro, preciso dos seguintes dados na mesma mensagem:\n\n` +
     campos.map((c) => `• **${c}**`).join('\n') +
-    `\n\n📌 *Exemplo completo:*\n` +
-    `*"Cadastrar lead Roberto Souza, fone 45 99999-1122, email roberto@prati.com.br"*`,
+    `\n\n📌 *Exemplo completo (mínimo):*\n` +
+    `*"Cadastrar lead Roberto Souza, fone 45 99999-1122, email roberto@pratti.com.br"*\n\n` +
+    `💡 *Campos opcionais que também posso registrar:*\n` +
+    `• Empreendimento de interesse *(ex: "interessado no Carmel")*\n` +
+    `• Origem do lead *(ex: "veio do Instagram")*\n` +
+    `• Renda aproximada *(ex: "renda de 8 mil")*\n` +
+    `• CPF *(ex: "CPF 123.456.789-00")*\n` +
+    `• Data de retorno *(ex: "retorno amanhã às 14h")*\n` +
+    `• Observação inicial *(ex: "obs: cliente viaja muito")*`,
 
+  // ── NOVA: Boas-vindas ──────────────────────────────────────────────────────
+  boasVindas: () => {
+    const hora = new Date().getHours();
+    const periodo = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+    return (
+      `> 👋 **${periodo}, ${CORRETOR_NOME}! Seu assistente Pratti está ativo.**\n\n` +
+      `Sou o bot do CRM Pratti para Microsoft Teams. Interpreto linguagem natural e executo ações direto no **CV CRM** — sem formulários, sem cliques.\n\n` +
+      `---\n\n` +
+      `## 📋 O que posso fazer por você\n\n` +
+      `**➕ Criar Lead**\n` +
+      `Cadastre um novo cliente diretamente pelo chat, com todos os dados relevantes.\n` +
+      `> *"Crie lead Maria Souza, fone 45 99999-0000, email maria@test.com, interessada no Villa Bella, veio do Instagram, renda de 12 mil"*\n\n` +
+      `**📋 Listar Leads**\n` +
+      `Visualize todos os leads da sua carteira em uma listagem rápida.\n` +
+      `> *"Ver meus leads"* · *"Puxar minha carteira"* · *"Listar todos os clientes"*\n\n` +
+      `**✏️ Atualizar Lead**\n` +
+      `Altere telefone, e-mail, empreendimento ou outros dados de um lead existente.\n` +
+      `> *"Atualizar lead 465: novo telefone 45 99111-2233"*\n\n` +
+      `**📝 Registrar Nota / Histórico**\n` +
+      `Adicione anotações, observações ou agende retornos no histórico do lead.\n` +
+      `> *"Anotar no lead 465: cliente pediu retorno na sexta às 10h"*\n\n` +
+      `**🗑️ Remover Lead**\n` +
+      `Exclua um lead da base quando necessário (ação irreversível).\n` +
+      `> *"Excluir lead 465"*\n\n` +
+      `---\n` +
+      `💡 Digite **"ajuda"** para ver todos os comandos  ·  **"help criar"**, **"help listar"**, **"help atualizar"**, **"help histórico"** ou **"help deletar"** para detalhes de cada função.\n\n` +
+      `🔒 *Você só visualiza e edita leads da sua carteira — governança Pratti ativa.*`
+    );
+  },
+
+  // ── NOVA: Menu de ajuda geral (melhorado) ─────────────────────────────────
   ajuda: () =>
-    `> 🤖 **Assistente Pratti Comercial — Ativo e Pronto**\n\n` +
-    `Compreendo linguagem natural. Veja o que posso fazer:\n\n` +
+    `> 🤖 **Assistente Pratti Comercial — Menu de Comandos**\n\n` +
+    `Interprete comandos em linguagem natural. Veja o que posso fazer:\n\n` +
     `**➕ CRIAR LEAD**\n` +
-    `• *"Cadastrar lead Ana Lima, fone 45 99887-6655, email ana@prati.com.br"*\n\n` +
+    `• *"Cadastrar lead Ana Lima, fone 45 99887-6655, email ana@pratti.com.br"*\n` +
+    `• *"Novo lead Pedro Almada, 45999001122, pedro@test.com, interessado no Carmel, veio do Facebook, renda 10 mil"*\n\n` +
     `**📋 LISTAR LEADS**\n` +
     `• *"Ver todos os meus leads"* / *"Puxar minha carteira"*\n\n` +
     `**✏️ ATUALIZAR LEAD**\n` +
-    `• *"Alterar telefone do lead 465 para 45 99111-2233"*\n\n` +
+    `• *"Alterar telefone do lead 465 para 45 99111-2233"*\n` +
+    `• *"Editar lead 465: empreendimento Carmel, email novo@test.com"*\n\n` +
     `**🗑️ DELETAR LEAD**\n` +
     `• *"Excluir lead 465"* / *"Apagar lead 465"*\n\n` +
     `**📝 REGISTRAR NOTA/HISTÓRICO**\n` +
-    `• *"Anotar no lead 465: cliente solicitou retorno amanhã às 14h"*\n\n` +
-    `---\n*Somente leads da sua carteira são visíveis e editáveis.*`,
+    `• *"Anotar no lead 465: cliente solicitou retorno amanhã às 14h"*\n` +
+    `• *"Registrar que o lead 465 visitou o stand hoje"*\n\n` +
+    `---\n` +
+    `💡 **Campos que posso capturar ao criar ou atualizar:**\n` +
+    `Nome · Telefone · E-mail · Empreendimento · Origem · Renda · CPF · Data de retorno · Observação inicial\n\n` +
+    `📖 Digite **"help criar"**, **"help listar"**, **"help atualizar"**, **"help histórico"** ou **"help deletar"** para detalhes completos.\n\n` +
+    `🔒 *Somente leads da sua carteira são visíveis e editáveis.*`,
+
+  // ── NOVA: Help detalhado — CRIAR ──────────────────────────────────────────
+  helpCriar: () =>
+    `> ➕ **Ajuda Detalhada — Criar Lead**\n\n` +
+    `Cadastra um novo cliente no CV CRM e o vincula automaticamente à sua carteira.\n\n` +
+    `---\n\n` +
+    `**📌 Campos obrigatórios** *(sem eles o cadastro é bloqueado)*\n` +
+    `• **Nome completo** do cliente\n` +
+    `• **Telefone** *(formatos aceitos: 45999991111, 45 99999-1111, (45)99999-1111)*\n` +
+    `• **E-mail** *(formato: exemplo@dominio.com)*\n\n` +
+    `---\n\n` +
+    `**💡 Campos opcionais** *(enriquecem o lead no CRM)*\n` +
+    `• **Empreendimento** — *"interessado no Carmel"*, *"interesse no Villa Bella"*\n` +
+    `• **Origem** — *"veio do Instagram"*, *"indicação"*, *"captado no Facebook"*, *"via Google"*, *"plantão"*, *"feirão"*, *"evento"*, *"stand"*\n` +
+    `• **Renda aproximada** — *"renda de 12 mil"*, *"renda aproximada 8000"*, *"renda R$ 5.500"*\n` +
+    `• **CPF** — *"CPF 123.456.789-00"*\n` +
+    `• **Observação inicial** — *"obs: cliente prefere contato por WhatsApp"*\n` +
+    `• **Data de retorno** — *"retorno amanhã às 14h"*, *"ligar na sexta às 10h"*\n\n` +
+    `---\n\n` +
+    `**📋 Exemplos de comando**\n\n` +
+    `*Mínimo:*\n` +
+    `> *"Crie lead João Pereira, fone 45 99888-7766, email joao@test.com"*\n\n` +
+    `*Completo:*\n` +
+    `> *"Cadastrar lead Maria Oliveira, 45999001122, maria@test.com, interessada no Carmel, veio do Instagram, renda de 10 mil, CPF 111.222.333-44, obs: cliente viaja muito, retorno na sexta às 14h"*\n\n` +
+    `---\n` +
+    `🔒 *O lead é criado automaticamente vinculado ao seu usuário (${CORRETOR_NOME}).*`,
+
+  // ── NOVA: Help detalhado — LISTAR ─────────────────────────────────────────
+  helpListar: () =>
+    `> 📋 **Ajuda Detalhada — Listar Leads**\n\n` +
+    `Exibe todos os leads da sua carteira com nome, telefone mascarado, empreendimento e ID.\n\n` +
+    `---\n\n` +
+    `**📋 Exemplos de comando**\n` +
+    `• *"Ver meus leads"*\n` +
+    `• *"Listar minha carteira"*\n` +
+    `• *"Puxar todos os clientes"*\n` +
+    `• *"Mostra minha base"*\n` +
+    `• *"Consultar leads"*\n` +
+    `• *"Trazer carteira"*\n` +
+    `• *"Meus contatos"*\n\n` +
+    `---\n` +
+    `🔒 *Leads de outros corretores não aparecem na listagem — Regra 4 de Governança.*`,
+
+  // ── NOVA: Help detalhado — ATUALIZAR ──────────────────────────────────────
+  helpAtualizar: () =>
+    `> ✏️ **Ajuda Detalhada — Atualizar Lead**\n\n` +
+    `Altera dados cadastrais de um lead existente da sua carteira.\n\n` +
+    `---\n\n` +
+    `**📌 Como identificar o lead**\n` +
+    `• Pelo **ID numérico** *(mais preciso)*: *"lead 465"*\n` +
+    `• Pelo **nome** *(pode gerar desambiguação se houver duplicatas)*: *"lead Maria Souza"*\n\n` +
+    `**💡 O que posso atualizar**\n` +
+    `• **Nome** — *"nome para Maria Souza Lima"*\n` +
+    `• **Telefone** — *"fone 45 99111-2233"*\n` +
+    `• **E-mail** — *"email novo@test.com"*\n` +
+    `• **Empreendimento** — *"empreendimento Carmel"*\n` +
+    `• **Origem** — *"origem Instagram"*\n` +
+    `• **Renda** — *"renda de 15 mil"*\n\n` +
+    `---\n\n` +
+    `**📋 Exemplos de comando**\n` +
+    `• *"Atualizar lead 465: telefone 45 99111-2233"*\n` +
+    `• *"Editar lead Maria Souza: novo email maria2@test.com, empreendimento Villa Bella"*\n` +
+    `• *"Alterar lead 465: renda de 18 mil, origem Google"*\n\n` +
+    `---\n` +
+    `🔒 *Somente leads da sua carteira podem ser editados — Regra 3 de Governança.*`,
+
+  // ── NOVA: Help detalhado — HISTÓRICO/INTERAÇÃO ────────────────────────────
+  helpHistorico: () =>
+    `> 📝 **Ajuda Detalhada — Registrar Nota / Histórico**\n\n` +
+    `Adiciona uma anotação ou observação no histórico de atendimento do lead, com registro de autor, data e hora automaticamente.\n\n` +
+    `---\n\n` +
+    `**📌 Como identificar o lead**\n` +
+    `• Pelo **ID numérico** *(mais preciso)*: *"lead 465"*\n` +
+    `• Pelo **nome** *(pode gerar desambiguação se houver duplicatas)*\n\n` +
+    `**💡 O que posso registrar**\n` +
+    `• Observações livres sobre o atendimento\n` +
+    `• Resultado de ligações e visitas\n` +
+    `• Agendamento de retorno\n` +
+    `• Status do interesse do cliente\n\n` +
+    `---\n\n` +
+    `**📋 Exemplos de comando**\n` +
+    `• *"Anotar no lead 465: cliente pediu retorno na sexta às 10h"*\n` +
+    `• *"Registrar no lead 465 que o cliente visitou o stand hoje e gostou do Carmel"*\n` +
+    `• *"Obs no lead 465: sem resposta na ligação, tentar novamente amanhã"*\n` +
+    `• *"Histórico lead 465: cliente aprovado no financiamento, aguardando documentação"*\n\n` +
+    `---\n` +
+    `🔒 *A nota é registrada com seu nome (${CORRETOR_NOME}), origem Teams e timestamp automático — Regra 7.*`,
+
+  // ── NOVA: Help detalhado — DELETAR ────────────────────────────────────────
+  helpDeletar: () =>
+    `> 🗑️ **Ajuda Detalhada — Deletar Lead**\n\n` +
+    `Remove permanentemente um lead do CRM. **Esta ação é irreversível.**\n\n` +
+    `---\n\n` +
+    `**📌 Como identificar o lead**\n` +
+    `• Recomendamos sempre usar o **ID numérico** para evitar erros:\n` +
+    `  *"Excluir lead 465"*\n\n` +
+    `**📋 Exemplos de comando**\n` +
+    `• *"Excluir lead 465"*\n` +
+    `• *"Deletar lead 465"*\n` +
+    `• *"Apagar lead 465"*\n` +
+    `• *"Remover lead 465"*\n\n` +
+    `---\n` +
+    `⚠️ *Se houver dúvida entre dois leads com o mesmo nome, o bot pedirá confirmação antes de excluir.*\n` +
+    `🔒 *Somente leads da sua carteira podem ser removidos — Regra 3 de Governança.*`,
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -887,6 +1129,12 @@ async function handleCriar(textoOriginal, textoMinusculo, send) {
     );
     const corretor = matchCorretor ? matchCorretor[1].trim() : CORRETOR_NOME;
 
+    const origem = extrairOrigem(textoOriginal);
+    const renda = extrairRenda(textoOriginal);
+    const cpf = extrairCPF(textoOriginal);
+    const dataRetorno = extrairDataRetorno(textoOriginal);
+    const obsInicial = extrairObservacaoInicial(textoOriginal);
+
     const telefoneLimpo = telefone.replace(/\D/g, '');
     const emailLimpo = email.toLowerCase();
 
@@ -924,12 +1172,17 @@ async function handleCriar(textoOriginal, textoMinusculo, send) {
       }
     }
 
+    // Dentro do objeto payload existente, adicione as novas propriedades:
     const payload = {
       nome,
       telefone,
       email: emailLimpo,
       empreendimento,
-      origem: 'Teams Bot Pratti',
+      origem: origem || 'Teams Bot Pratti', // ← campo já existia, agora usa o extrator
+      renda_aproximada: renda || null, // ← NOVO
+      cpf: cpf || null, // ← NOVO
+      data_retorno: dataRetorno || null, // ← NOVO
+      observacao_inicial: obsInicial || null, // ← NOVO
       gestor_responsavel: CORRETOR_NOME,
       id_corretor: CORRETOR_ID,
       corretor,
@@ -959,14 +1212,27 @@ async function handleCriar(textoOriginal, textoMinusculo, send) {
         { ...payload, novoId },
         `Lead criado e atribuído ao corretor ${CORRETOR_NOME} (ID ${CORRETOR_ID}).`
       );
+      // Substituir o await send de sucesso existente por este:
+      const linhasOpcionais = [
+        empreendimento !== 'Não informado' ? `• **Empreendimento:** ${empreendimento}` : null,
+        origem ? `• **Origem:** ${origem}` : null,
+        renda ? `• **Renda Aprox.:** ${renda}` : null,
+        cpf ? `• **CPF:** ${cpf}` : null,
+        dataRetorno ? `• **Retorno Agendado:** ${dataRetorno}` : null,
+        obsInicial ? `• **Obs. Inicial:** ${obsInicial}` : null,
+      ].filter(Boolean);
+
       await send(
         `> ✅ **Lead Criado com Sucesso — CV CRM**\n\n` +
-          `• **Nome:** ${nome}\n\n` +
-          `• **Telefone:** ${telefone}\n\n` +
-          `• **E-mail:** ${emailLimpo}\n\n` +
-          `• **Empreendimento:** ${empreendimento}\n\n` +
+          `**Dados obrigatórios:**\n` +
+          `• **Nome:** ${nome}\n` +
+          `• **Telefone:** ${telefone}\n` +
+          `• **E-mail:** ${emailLimpo}\n` +
+          `• **ID Gerado:** ${novoId}\n` +
           `• **Responsável:** ${CORRETOR_NOME} (ID ${CORRETOR_ID})\n\n` +
-          `• **ID Gerado:** ${novoId}\n\n` +
+          (linhasOpcionais.length > 0
+            ? `**Dados complementares registrados:**\n` + linhasOpcionais.join('\n') + `\n\n`
+            : `💡 *Dica: você pode incluir empreendimento, origem, renda, CPF, data de retorno e observação no mesmo comando.*\n\n`) +
           `---\n*Lead vinculado à sua carteira conforme Regra 2.*`
       );
     } else {
@@ -1552,10 +1818,60 @@ app.on('message', async ({ send, activity }) => {
     // ── DIRETIVA 2 + 4: Detecção de intenções e colisão ──
     const intencoesDetectadas = detectarIntencoes(textoMinusculo);
 
-    // Comandos de ajuda — prioridade absoluta
+    // DEPOIS (substituir pelo bloco abaixo):
+
+    // ── Saudações puras → Boas-vindas ──
     if (
       textoMinusculo.match(
-        /\b(ajuda|help|socorro|oi|ola|olá|bom dia|boa tarde|boa noite|comandos|menu|o que você faz|o que voce faz|como usar|instruções|instrucoes)\b/
+        /^(oi|olá|ola|oi bot|olá bot|ola bot|hey|ei|eai|eaí|e aí|e ai|bom dia|boa tarde|boa noite|good morning|good afternoon|good evening|hello|hi|howdy|salve|salve bot|fala bot|fala aí|fala ai|opa|opa bot|oi tudo bem|tudo bem|tudo bom|tudo certo|tudo ótimo|tudo otimo|como vai|como você está|como voce esta|olá tudo|oi tudo|boas|cumprimentos|saudações|saudacoes|alô|alo|heyy|hola|yoo|yooo|bom diaa|boa tardee|boa noitee|oi sumido|sumido|voltei|to aqui|tô aqui|presente|opa tudo|ola tudo|salutations)\b/
+      )
+    ) {
+      await send(MSG.boasVindas());
+      return;
+    }
+
+    // ── Help detalhado por função ──
+    if (textoMinusculo.match(/\b(help|ajuda|socorro)\b.*\b(criar?|cadastr|novo lead|add lead)\b/)) {
+      await send(MSG.helpCriar());
+      return;
+    }
+    if (
+      textoMinusculo.match(
+        /\b(help|ajuda|socorro)\b.*\b(listar?|list|ver|mostrar?|consultar?|carteira)\b/
+      )
+    ) {
+      await send(MSG.helpListar());
+      return;
+    }
+    if (
+      textoMinusculo.match(
+        /\b(help|ajuda|socorro)\b.*\b(atualizar?|editar?|alterar?|modificar?|update)\b/
+      )
+    ) {
+      await send(MSG.helpAtualizar());
+      return;
+    }
+    if (
+      textoMinusculo.match(
+        /\b(help|ajuda|socorro)\b.*\b(histórico|historico|nota|anot|interação|interacao|registrar?|obs)\b/
+      )
+    ) {
+      await send(MSG.helpHistorico());
+      return;
+    }
+    if (
+      textoMinusculo.match(
+        /\b(help|ajuda|socorro)\b.*\b(deletar?|excluir?|remover?|apagar?|delete)\b/
+      )
+    ) {
+      await send(MSG.helpDeletar());
+      return;
+    }
+
+    // ── Ajuda geral / menu ──
+    if (
+      textoMinusculo.match(
+        /\b(ajuda|help|socorro|comandos|menu|o que você faz|o que voce faz|como usar|instruções|instrucoes|o que sabe|o que você sabe|quais comandos|que comandos)\b/
       )
     ) {
       await send(MSG.ajuda());
